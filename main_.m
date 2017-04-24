@@ -2,14 +2,12 @@ clc
 clear
 close all
 % Author : Wonjoong Jason Cheon,
-% Date: 2017-04-11
+% Date: 2017-04-24
 % Purpose : Load dicom files such as RTDose, CT image ..and Show as 3D
 %          distribution
 % Version: 1.2
 % CTDI Ouput Date type : 32 bit (float) 
 % 
-
-
 %%
 [FileName,PathName] = uigetfile({'*.dcm';'*.mat';'*.raw'},'Select the MATLAB code file');
 filetype = FileName(end-2:end);
@@ -55,12 +53,13 @@ alphamap('rampup'); grid on, title('3D DOSE DISTRIBUTION')
 % alphamap(.6 .* alphamap);
 
 %%
+close all 
 [sx,sy,sz] = size(DataSet3D);
 figure(10)
 for iter2 = 1: sz
    figure(10), imshow(squeeze(DataSet3D(:,:,iter2)),[])
    title(num2str(iter2))
-   pause(1.0)    % 1.0 √  
+%    pause(1.0)    % 1.0 √  
    drawnow
 end
 %%
@@ -80,5 +79,25 @@ selected_slice_number = 10;
 % %     disp(option_colormap{iter2})
 % end
 
-%%
+%% CTDI
+imageSize = size(DataSet3D);
+ci = [imageSize(1)/2, imageSize(2)/2, 80];     % center and radius of circle ([c_row, c_col, r])
+[xx,yy] = ndgrid((1:imageSize(1))-ci(1),(1:imageSize(2))-ci(2));
+mask = double((xx.^2 + yy.^2)<ci(3)^2);
+croppedImage= DataSet3D(:,:,50).*mask;
+imshow(croppedImage,[]), colormap(jet);
+
+%
+CTDI_Matrix = DataSet3D.*0;
+figure(11), hold on, 
+for iter_ctdi =  1: imageSize(3)
+    CTDI_Matrix(:,:,iter_ctdi) = DataSet3D(:,:,iter_ctdi).*mask;
+    imshow(CTDI_Matrix(:,:,iter_ctdi),[])
+    title(num2str(iter_ctdi)), colormap(jet), drawnow
+end
+CTDI_Matrix(CTDI_Matrix==0) = [];
+sum_CTDI_Matrix = sum(CTDI_Matrix);
+NumberOfSlice = 100;     % [slice]
+SliceThinkness = 1;      % [mm]
+mean_CTDI_Matrix_perSlice = sum_CTDI_Matrix/(NumberOfSlice*SliceThinkness)
 
